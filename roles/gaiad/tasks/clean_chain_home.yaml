@@ -1,0 +1,83 @@
+---
+- name: rm chain home
+  ansible.builtin.file:
+    path: "{{ chain_home }}"
+    state: absent
+
+- name: set chain id
+  ansible.builtin.command: "sudo -u {{ gaiad_user }} {{ gaiad_binary }} {{ item }} --home {{ chain_home }}"
+  with_items:
+    - config chain-id {{ chain_id }}
+    - config keyring-backend test
+    - config broadcast-mode block
+    - init {{ chain_node_moniker }} --chain-id {{ chain_id }}
+
+- name: Download genesis file
+  ansible.builtin.get_url:
+    url: "{{ genesis_url }}"
+    dest: "{{ chain_home }}/config/genesis.json.gz"
+    decompress: true
+    owner: "{{ gaiad_user }}"
+    mode: "600"
+
+- name: Uncopmress genesis file
+  ansible.builtin.command:
+    cmd: "sudo -u {{ gaiad_user }} gunzip -fd genesis.json.gz"
+    chdir: "{{ chain_home }}/config"
+
+- name: obtain trust height
+  ansible.builtin.script: 
+    get_trust_height.sh {{ sync_rpc.split(',')[0] }}
+  register: trust_height
+
+- name: obtain trust height block hash ID
+  ansible.builtin.script:
+    get_trust_hash.sh {{ sync_rpc.split(',')[0] }} {{ trust_height.stdout }}
+  register: trust_hash
+
+- name: set state sync variables
+  set_fact:
+    statesync_trust_height: "{{ trust_height.stdout }}"
+    statesync_trust_hash: "{{ trust_hash.stdout }}"
+
+- name: enable state sync
+  ansible.builtin.lineinfile:
+    path: "{{ chain_home }}/config/config.toml"
+    regexp: "^enable ="
+    line: "enable = true"
+
+- name: set trust period
+  ansible.builtin.lineinfile:
+    path: "{{ chain_home }}/config/config.toml"
+    regexp: "^trust_period ="
+    line: 'trust_period = "8h0m0s"'
+
+- name: set trust height
+  ansible.builtin.lineinfile:
+    path: "{{ chain_home }}/config/config.toml"
+    regexp: "^trust_height ="
+    line: 'trust_height = "{{ statesync_trust_height }}"'
+
+- name: set trust hash
+  ansible.builtin.lineinfile:
+    path: "{{ chain_home }}/config/config.toml"
+    regexp: "^trust_hash ="
+    line: 'trust_hash = "{{ statesync_trust_hash }}"'
+
+- name: set state sync rpc
+  ansible.builtin.lineinfile:
+    path: "{{ chain_home }}/config/config.toml"
+    regexp: "^rpc_servers ="
+    line: 'rpc_servers = "{{ sync_rpc }}"'
+
+- name: set p2p seeds
+  ansible.builtin.lineinfile:
+    path: "{{ chain_home }}/config/config.toml"
+    regexp: "^seeds ="
+    line: 'seeds = "{{ seeds }}"'
+
+- name: set gas price
+  ansible.builtin.lineinfile:
+    path: "{{ chain_home }}/config/app.toml"
+    regexp: "^minimum-gas-prices ="
+    line: 'minimum-gas-prices = "{{ gas_price }}"'

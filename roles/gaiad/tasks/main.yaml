@@ -1,0 +1,36 @@
+---
+- name: Ensure gaiad user exists
+  user:
+    name: "{{ gaiad_user }}"
+    shell: /usr/sbin/nologin
+    home: "{{ gaiad_user_home }}"
+    create_home: true
+    system: true
+    comment: User for gaiad service
+
+- name: Prepare go folder
+  file:
+    path: "{{ gaiad_user_home }}/go/bin"
+    state: directory
+    recurse: true
+    owner: "{{ gaiad_user }}"
+    group: "{{ gaiad_user }}"
+  notify: "clean_chain_home"
+
+- name: Download gaiad binary
+  ansible.builtin.get_url:
+    url: "{{ gaiad_binary_url }}"
+    dest: "{{ gaiad_binary }}"
+    checksum: "{{ gaiad_binary_checksum }}"
+    owner: "{{ gaiad_user }}"
+    mode: "700"
+
+- name: Clean chain home
+  include_tasks: tasks/clean_chain_home.yaml
+  when: clean_gaia is defined
+    
+- name: Create systemd service
+  ansible.builtin.template:
+    src: gaiad.service.j2
+    dest: "/etc/systemd/system/gaiad.service"
+  notify: gaiad_restart

@@ -1,0 +1,33 @@
+---
+- name: Ensure gaiaexporter user exists
+  user:
+    name: "{{ gaiaexporter_user }}"
+    shell: /usr/sbin/nologin
+    home: "{{ gaiaexporter_user_home }}"
+    create_home: true
+    system: true
+    comment: User for gaiaexporter service
+
+- name: Prepare go folder
+  file:
+    path: "{{ gaiaexporter_user_home }}/go/bin"
+    state: directory
+    recurse: true
+    owner: "{{ gaiaexporter_user }}"
+    group: "{{ gaiaexporter_user }}"
+
+- name: Download binary
+  unarchive:
+    src: "{{ gaiaexporter_url }}" 
+    dest: "{{ gaiaexporter_user_home }}/go/bin"
+    remote_src: true
+    creates: "{{ gaiaexporter_user_home }}/go/bin/gaiaexporter"
+  notify: gaiaexporter_restart
+
+- name: Create systemd service
+  template:
+    src: gaiaexporter.service.j2
+    dest: "/etc/systemd/system/gaiaexporter.service"
+  notify: gaiaexporter_restart
+
+    

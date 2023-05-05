@@ -1,0 +1,7 @@
+---
+- name: gaiaexporter_restart
+  systemd:
+    name: gaiaexporter
+    state: restarted
+    enabled: true
+    daemon_reload: true

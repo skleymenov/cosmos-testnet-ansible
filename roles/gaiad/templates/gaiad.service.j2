@@ -1,0 +1,23 @@
+[Unit]
+Description=gaiad chain node service
+After=network-online.target
+[Service]
+User={{gaiad_user}}
+ExecStart={{gaiad_binary}} start --home {{chain_home}} --x-crisis-skip-assert-invariants
+Restart=always
+RestartSec=3
+
+# Sandboxing features
+PrivateTmp=yes
+NoNewPrivileges=true
+ProtectSystem=strict
+CapabilityBoundingSet=CAP_NET_BIND_SERVICE CAP_DAC_READ_SEARCH
+RestrictNamespaces=uts ipc pid user cgroup
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+PrivateDevices=yes
+RestrictSUIDSGID=true
+
+[Install]
+WantedBy=multi-user.target

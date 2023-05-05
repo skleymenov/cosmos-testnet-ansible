@@ -1,0 +1,10 @@
+---
+- name: gaiad_restart
+  systemd:
+    name: gaiad
+    state: restarted
+    enabled: true
+    daemon_reload: true
+
+- name: clean_chain_home
+  include_tasks: tasks/clean_chain_home.yaml

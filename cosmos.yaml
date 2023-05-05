@@ -1,0 +1,40 @@
+---
+- name: Basic server requirements
+  hosts: all
+  become: true
+  roles:
+    - role: base
+
+- name: Basic NFtables configuration
+  hosts: all
+  become: true
+  roles:
+    - role: ipr-cnrs.nftables
+      vars:
+        nft_output_rules:
+          400 output cosmos accepted:
+            - tcp dport { 26000-27000 } ct state new accept
+
+- name: Install gaiad
+  hosts: all
+  become: true
+  roles:
+    - role: gaiad
+    
+- name: Install gaiadexported
+  hosts: all
+  become: true
+  roles:
+    - gaiadexporter
+
+- name: Basic os hardening
+  hosts: all
+  become: true
+  roles:
+    - role: devsec.hardening.os_hardening
+      vars:
+        - ufw_manage_defaults: false
+    - role: devsec.hardening.ssh_hardening
+      vars:
+        - ssh_max_sessions: 2
+        - ssh_client_alive_count: 2

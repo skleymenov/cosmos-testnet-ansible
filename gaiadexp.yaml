@@ -1,0 +1,6 @@
+---
+- name: Install gaiadexported
+  hosts: all
+  become: true
+  roles:
+    - gaiadexporter

@@ -1,0 +1,4 @@
+---
+gaiaexporter_user: gexp
+gaiaexporter_user_home: /home/{{ gaiaexporter_user }}
+gaiaexporter_url: "https://github.com/skleymenov/gaiaexporter/releases/download/v0.1/gaiaexporter-v0.1-linux-amd64.tar.gz"
